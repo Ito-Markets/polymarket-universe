@@ -1,26 +1,88 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+/* ── Light (default) ── */
+:root,
+[data-theme="light"] {
+  --bg: #FAFAF9;
+  --surface: #FFFFFF;
+  --text-1: #1A1A1A;
+  --text-2: #6B6B6B;
+  --text-3: #A0A0A0;
+  --border: #E8E8E6;
+  --border-subtle: #F0EFED;
+  --hover: rgba(0, 0, 0, 0.025);
+  --graph-bg: #F4F3F1;
+  --globe-bg: #F4F3F1;
+  --tooltip-bg: white;
+  --tooltip-border: #E8E8E6;
+  --tooltip-shadow: rgba(0,0,0,0.06);
+  --accent: #1A1A1A;
+}
+
+/* ── Dark (navy, matches Itô branding) ── */
+[data-theme="dark"] {
+  --bg: #0f172a;
+  --surface: #0f172a;
+  --text-1: #e2e8f0;
+  --text-2: #94a3b8;
+  --text-3: #475569;
+  --border: #1e293b;
+  --border-subtle: #172033;
+  --hover: rgba(255, 255, 255, 0.04);
+  --graph-bg: #0f172a;
+  --globe-bg: #0f172a;
+  --tooltip-bg: #1e293b;
+  --tooltip-border: #334155;
+  --tooltip-shadow: rgba(0,0,0,0.4);
+  --accent: #e2e8f0;
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  --color-background: var(--bg);
+  --color-foreground: var(--text-1);
+  --font-sans: var(--font-inter), -apple-system, sans-serif;
+  --font-serif: var(--font-cormorant), "Georgia", serif;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--bg);
+  color: var(--text-1);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  transition: background 0.3s, color 0.3s;
+}
+
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: var(--text-3); }
+
+canvas { outline: none; }
+
+/* Modal */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.2);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+[data-theme="dark"] .modal-overlay {
+  background: rgba(0, 0, 0, 0.5);
+}
+
+.modal-card {
+  background: var(--surface);
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  box-shadow: 0 20px 60px var(--tooltip-shadow);
+  max-width: 480px;
+  width: 90%;
+  max-height: 80vh;
+  overflow-y: auto;
 }
