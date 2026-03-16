@@ -15,12 +15,21 @@ interface GalaxyGraphProps {
   searchQuery: string;
 }
 
+function hashString(value: string): number {
+  let hash = 0;
+  for (let i = 0; i < value.length; i += 1) {
+    hash = (hash * 31 + value.charCodeAt(i)) >>> 0;
+  }
+  return hash;
+}
+
 export default function GalaxyGraph({
   data,
   selectedDomains,
   searchQuery,
 }: GalaxyGraphProps) {
   const fgRef = useRef<any>(null);
+  const shouldFrameRef = useRef(false);
   const { setSelectedNode, theme } = useAppStore();
   const [graphData, setGraphData] = useState<any>({ nodes: [], links: [] });
   const [highlightNodes, setHighlightNodes] = useState<Set<string>>(new Set());
@@ -36,7 +45,31 @@ export default function GalaxyGraph({
   useEffect(() => {
     if (!data) return;
 
+    const domainOrder = [...new Set(data.nodes.map((node) => node.domain))].sort();
+    const domainAngle = new Map(
+      domainOrder.map((domain, index) => [
+        domain,
+        (index / Math.max(domainOrder.length, 1)) * Math.PI * 2,
+      ])
+    );
+
     let nodes = data.nodes.map((n) => ({
+      ...(() => {
+        const angle = domainAngle.get(n.domain) ?? 0;
+        const seed = hashString(n.id);
+        const jitterAngle = ((seed % 360) / 360) * Math.PI * 2;
+        const jitterRadius = 8 + ((seed >> 4) % 34);
+        const clusterRadius = 170 + Math.log2(n.market_count + 1) * 8;
+        const x = Math.cos(angle) * clusterRadius + Math.cos(jitterAngle) * jitterRadius;
+        const y =
+          Math.sin(angle) * clusterRadius * 0.72 +
+          Math.sin(jitterAngle) * jitterRadius;
+        const z =
+          Math.sin(angle * 2) * 28 +
+          (((seed >> 9) % 120) - 60) * 0.45;
+
+        return { x, y, z };
+      })(),
       id: n.id,
       name: n.label,
       domain: n.domain,
@@ -73,26 +106,62 @@ export default function GalaxyGraph({
     }
 
     setGraphData({ nodes, links });
+    shouldFrameRef.current = true;
   }, [data, selectedDomains, searchQuery]);
 
   // Configure d3 forces for better spacing
   useEffect(() => {
     if (!fgRef.current) return;
     const fg = fgRef.current;
-    // Stronger repulsion so nodes spread more, especially non-clustered ones
-    fg.d3Force("charge")?.strength(-150)?.distanceMax(600);
+    const controls = fg.controls?.();
+    if (controls) {
+      controls.enableDamping = true;
+      controls.dampingFactor = 0.08;
+      controls.rotateSpeed = 0.75;
+      controls.zoomSpeed = 0.9;
+      controls.minDistance = 110;
+      controls.maxDistance = 900;
+    }
+
+    // Keep the graph compact enough that the default framing reads clearly.
+    fg.d3Force("charge")?.strength(-72)?.distanceMax(260);
     // Link distance based on weight: strong links = closer, weak links = farther
     fg.d3Force("link")?.distance((link: any) => {
       const w = link.value || 1;
-      if (link.linkType === "semantic") return Math.max(40, 100 - Math.log2(w + 1) * 12);
-      return Math.max(50, 140 - Math.log2(w + 1) * 18);
+      if (link.linkType === "semantic") return Math.max(18, 52 - Math.log2(w + 1) * 8);
+      return Math.max(26, 76 - Math.log2(w + 1) * 10);
     });
-    // Add center force to prevent drift
-    fg.d3Force("center")?.strength(0.05);
+    // Keep the topology centered instead of drifting toward an edge.
+    fg.d3Force("center")?.strength(0.2);
   }, [graphData]);
+
+  const frameGraph = useCallback((duration = 1400) => {
+    const fg = fgRef.current;
+    if (!fg || graphData.nodes.length === 0) return;
+
+    try {
+      fg.cameraPosition({ x: 0, y: 0, z: 260 }, { x: 0, y: 0, z: 0 }, 0);
+      fg.zoomToFit(duration, 70);
+    } catch {
+      // Ignore transient camera errors while the canvas is mounting.
+    }
+  }, [graphData.nodes.length]);
+
+  useEffect(() => {
+    if (webglAvailable === false || graphData.nodes.length === 0) return;
+
+    const timer = window.setTimeout(() => {
+      if (shouldFrameRef.current) {
+        frameGraph(0);
+      }
+    }, 250);
+
+    return () => window.clearTimeout(timer);
+  }, [frameGraph, graphData.nodes.length, graphData.links.length, webglAvailable]);
 
   const handleNodeClick = useCallback(
     (node: any) => {
+      shouldFrameRef.current = false;
       setSelectedNode({
         id: node.id,
         label: node.name,
@@ -409,6 +478,11 @@ export default function GalaxyGraph({
       linkDirectionalParticleColor={() =>
         isDark ? "rgba(210, 170, 60, 0.7)" : "rgba(180, 140, 40, 0.6)"
       }
+      onEngineStop={() => {
+        if (!shouldFrameRef.current) return;
+        shouldFrameRef.current = false;
+        frameGraph();
+      }}
       onNodeClick={handleNodeClick}
       onNodeHover={(node: any) => setHoverNode(node?.id || null)}
       enableNodeDrag={true}

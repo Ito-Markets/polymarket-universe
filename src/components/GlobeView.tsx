@@ -48,8 +48,8 @@ export default function GlobeView({ countries, arcs }: GlobeViewProps) {
   useEffect(() => {
     if (globeRef.current && globeReady) {
       globeRef.current.controls().autoRotate = true;
-      globeRef.current.controls().autoRotateSpeed = 0.3;
-      globeRef.current.pointOfView({ lat: 25, lng: -30, altitude: 2.2 }, 1500);
+      globeRef.current.controls().autoRotateSpeed = 0.22;
+      globeRef.current.pointOfView({ lat: 18, lng: -28, altitude: 2.05 }, 1500);
     }
   }, [globeReady]);
 
