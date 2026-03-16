@@ -39,6 +39,10 @@ Market detail panel with structured metadata:
 
 ![Market Detail](screenshots/market_detail_dark.png)
 
+Market-level constellation where every prediction market is rendered as its own node:
+
+![All Market Nodes](screenshots/all_market_nodes_constellation.png)
+
 The app uses live 3D views when WebGL is available. In headless or restricted environments, it falls back to static briefing panels built from the same exported data so the UI remains readable instead of failing.
 
 ## quickstart
@@ -85,6 +89,8 @@ polymarket-universe/
     all_markets_index.part*.json  # sharded full searchable market title index
   screenshots/
     *.png                   # GitHub README assets
+  scripts/
+    render_all_market_nodes.py  # renders the all-market node constellation screenshot
 ```
 
 ## data surfaces
@@ -144,6 +150,14 @@ polymarket-universe/
 - `react-globe.gl` for the country view
 - Recharts for the issuance timeline
 - Static JSON exports for fast local startup
+
+## generating the all-market screenshot
+
+```bash
+python3 scripts/render_all_market_nodes.py
+```
+
+This render uses every market in `data/all_markets_index.part*.json` and lays them out as a dense market cloud grouped by inferred domain, category anchor, and creation-time drift.
 
 ## limitations
 
