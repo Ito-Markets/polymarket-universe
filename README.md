@@ -165,6 +165,7 @@ This render uses every market in `data/all_markets_index.part*.json` and lays th
 - Search is **title-based**, not semantic.
 - Some exported status counts are internally inconsistent, so the most reliable top-line numbers are total markets, events, graph nodes/links, country coverage, and timeline span.
 - WebGL is required for the full 3D experience. Environments without it fall back to static summary panels.
+- Contributions are welcome - live data options + integrations, backfilling data, introducing other venues and data oracles for a deeper universe, are all greatly appreciated!
 
 ---
 
